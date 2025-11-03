@@ -1,0 +1,85 @@
+body {
+  background: linear-gradient(135deg, #0072ff, #00c6ff);
+  font-family: 'Poppins', sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  color: #fff;
+}
+
+.game-container {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 30px;
+  border-radius: 15px;
+  text-align: center;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  width: 340px;
+}
+
+h1 {
+  font-size: 1.6em;
+  margin-bottom: 10px;
+}
+
+input {
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  width: 100px;
+  text-align: center;
+  font-size: 1em;
+}
+
+button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  background: #ff7675;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+button:hover {
+  background: #ff5252;
+}
+
+.restart-btn {
+  margin-top: 10px;
+  background: #0984e3;
+}
+
+.restart-btn:hover {
+  background: #74b9ff;
+}
+
+.message {
+  margin-top: 15px;
+  font-size: 1.1em;
+  min-height: 25px;
+}
+
+.smart-tip {
+  margin-top: 10px;
+  font-style: italic;
+  color: #ffeaa7;
+}
+
+.score {
+  margin-top: 10px;
+  color: #dfe6e9;
+}
+
+.difficulty {
+  margin-bottom: 15px;
+}
+
+select {
+  padding: 6px;
+  border-radius: 5px;
+  border: none;
+  font-size: 1em;
+}
