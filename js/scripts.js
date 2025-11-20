@@ -1,183 +1,320 @@
-// Start game
-  // Variables to save the score and player name 
-  let score = 0;  
-  let playerName = ""; 
-  let playGame;
+// 3D Snake Game with Three.js
 
-  // To be able to draw on our browser, we need to first have all the necessary methods to assist with out drawing. 
+let scene, camera, renderer;
+let snake = [];
+let food;
+let score = 0;
+let playerName = "";
+let direction = "right";
+let nextDirection = "right";
+let gameInterval;
+let gameRunning = false;
+const gridSize = 20;
+const boardSize = 40; // 40x40 grid - larger play area
+const stepTime = 120; // ms - slightly faster
 
-  // The way we do that is, we use the getContext() method on our canvas. This method returns an object which has lots of drawing methods in it. 
-
-  // We use the returned object to do our drawing. Since we are planning to draw a two dimentional game, we pass "2d" as an argument to the getContext() method.
-
-  const canvas = document.querySelector(".canvas");
-  const ctx = canvas.getContext("2d");
-
-  // Take a look at the returned object on your console 
-  // console.log(ctx);
-
-  // To be able to control the movement of our snake in a controlled way, we are going to create a grid like system on our canvas. The snake then will follow the square grid on our canvas 
-
-  // Lets divide our canvas into 10 by 10 small squares  
-  const scale = 20;
-  const rows = canvas.height / scale;
-  const columns = canvas.width / scale;
-
-  // Now we need an array to save the bodies of our snake 
-  let snake = [];
-
-  // Just to give us a start we can initiate the initial head of the snake at (0,0) coordinate 
-
-  // Notice that the first element of our snake contains an object identifying the x and y coordinate of the initial piece of the snake 
-
-  let food = {
-    x : (Math.floor(Math.random() *
-      columns)) * scale, 
-    y : (Math.floor(Math.random() *
-      rows)) * scale
-  }
+// Helper Functions (defined first)
+function onWindowResize() {
+    const aspect = window.innerWidth / window.innerHeight;
+    const viewSize = 25;
+    camera.left = -viewSize * aspect;
+    camera.right = viewSize * aspect;
+    camera.top = viewSize;
+    camera.bottom = -viewSize;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
 
 
-  // Get the name of the player 
-  let startGameButton = document.getElementById('player-name-form');
-  let canvasElement = document.getElementsByClassName('canvas');
+function onKeyDown(event) {
+    const key = event.keyCode;
+    if (key == 37 && direction != "right") nextDirection = "left";
+    else if (key == 38 && direction != "down") nextDirection = "up";
+    else if (key == 39 && direction != "left") nextDirection = "right";
+    else if (key == 40 && direction != "up") nextDirection = "down";
+}
 
-  startGameButton.addEventListener("submit", function(event){
-    event.preventDefault();
-    let playerNameElement = document.querySelector('#player-name-form .first_name');
-    playerName = playerNameElement.value; 
+function changeDirection(newDir) {
+    if (newDir === "left" && direction !== "right") nextDirection = "left";
+    else if (newDir === "up" && direction !== "down") nextDirection = "up";
+    else if (newDir === "right" && direction !== "left") nextDirection = "right";
+    else if (newDir === "down" && direction !== "up") nextDirection = "down";
+}
 
-    if(playerName !== ""){
-      canvasElement[0].classList.add("visible");
-      // Display the player's name and score 
-      document.querySelector('.game-info-wrapper').classList.add("visible");
-      document.querySelector('.pname-name').innerHTML = playerName;
-      document.querySelector('.pscore-score').innerHTML = score;
+// Touch/Swipe Support
+let touchStartX = 0;
+let touchStartY = 0;
 
-        snake = [];
-        score = 0; 
+function handleTouchStart(event) {
+    touchStartX = event.touches[0].clientX;
+    touchStartY = event.touches[0].clientY;
+}
 
-        snake[0]= {
-          x : (Math.floor(Math.random() *
-            columns)) * scale,
-          y : (Math.floor(Math.random() *
-            rows)) * scale
-        };
-        // console.log(snake);
-
-        
-
-        playGame = setInterval(draw,200);
-
-    }else{
-      alert("Please Enter Name First");
-      playerNameElement.focus();
+function handleTouchEnd(event) {
+    if (!touchStartX || !touchStartY) return;
+    
+    const touchEndX = event.changedTouches[0].clientX;
+    const touchEndY = event.changedTouches[0].clientY;
+    
+    const deltaX = touchEndX - touchStartX;
+    const deltaY = touchEndY - touchStartY;
+    
+    const minSwipeDistance = 30;
+    
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        // Horizontal swipe
+        if (Math.abs(deltaX) > minSwipeDistance) {
+            if (deltaX > 0) changeDirection("right");
+            else changeDirection("left");
+        }
+    } else {
+        // Vertical swipe
+        if (Math.abs(deltaY) > minSwipeDistance) {
+            if (deltaY > 0) changeDirection("down");
+            else changeDirection("up");
+        }
     }
     
-  });
-
-// call our draw function every 100 ms
-
-
-//control the snake direction
-// Let's initially make the snake move right  
-let d = "right";
-
-// Use the keyboard keys to control the direction of the snake 
-document.onkeydown = direction;
-
-function direction(event){
-  let key = event.keyCode;
-  if( key == 37 && d != "right"){
-      d = "left";
-  }else if(key == 38 && d != "down"){
-      d = "up";
-  }else if(key == 39 && d != "left"){
-      d = "right";
-  }else if(key == 40 && d != "up"){
-      d = "down";
-  }
+    touchStartX = 0;
+    touchStartY = 0;
 }
-// Function to draw our snake and the food 
-function draw() {
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	// Draw snake 
-	for (let i=0; i<snake.length; i++) {
-		ctx.fillStyle = "#fff";
-		ctx.strokeStyle = "red";
-	  ctx.fillRect(snake[i].x,
-	    snake[i].y, scale, scale);
-      ctx.strokeRect(snake[i].x,snake[i].y,scale,scale);  
-	}
-	// console.log(snake);
-	// Draw food 
-	ctx.fillStyle = "#ff0";
-	ctx.strokeStyle = "green";
-	ctx.fillRect(food.x, food.y, scale, scale);
-	ctx.strokeRect(food.x, food.y,scale,scale);
-  // old head position
-  let snakeX = snake[0].x;
-  let snakeY = snake[0].y;
-  // console.log(snakeX);
-  // which direction
-  if( d == "left") snakeX -= scale;
-  if( d == "up") snakeY -= scale;
-  if( d == "right") snakeX += scale;
-  if( d == "down") snakeY += scale;
 
-  if (snakeX > canvas.width) {
-    snakeX = 0;
-  }
-  if (snakeY > canvas.height) {
-    snakeY = 0;
-  }
-  if (snakeX < 0) {
-    snakeX = canvas.width;
-  }
-  if (snakeY < 0) {
-    snakeY = canvas.height;
-  }
-  // if the snake eats the food, it grows 
-  if(snakeX == food.x && snakeY == food.y){
-      food = {
-          x : (Math.floor(Math.random() * columns)) * scale,
-          y : (Math.floor(Math.random() * rows)) * scale
-      }
-      // we don't remove the tail
 
-      // Increase score here 
-      score += 100;
-      document.querySelector('.pscore-score').innerHTML = score;
-      // console.log(score);
-  }else{
-      // remove the tail
-      snake.pop();
-  }
-  // console.log(snake);
-  // New head position 
-  let newHead = {
-      x : snakeX,
-      y : snakeY
-  }
-  // console.log(snake);
-  if(eatSelf(newHead,snake)){
-    // Add score to the DB in here
+function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+}
+
+function gameOver() {
+    gameRunning = false;
+    clearInterval(gameInterval);
+    alert("Game Over! Score: " + score);
+    
+    // Submit score
     document.querySelector('.hidden-score-wrapper .player_name').value = playerName; 
     document.querySelector('.hidden-score-wrapper .player_score').value = score;
-    let scoreform = document.getElementById("game-score");
-    scoreform.submit();
-  	clearInterval(playGame);
-  }
-  snake.unshift(newHead);
+    document.getElementById("game-score").submit();
+    
+    // Show menu again
+    document.querySelector('.form-wrapper').style.display = 'block';
+    document.querySelector('.game-info-wrapper').classList.remove('visible');
 }
 
-// check if snake is eating itself 
-function eatSelf(head,array){
-  for(let i = 0; i < array.length; i++){
-      if(head.x == array[i].x && head.y == array[i].y){
-          return true;
-      }
-  }
-  return false;
+// Initialize Game
+function init() {
+    // Scene
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0a0a); // Dark background as fallback
+    
+    // Camera - Orthographic for full-screen top-down view
+    const aspect = window.innerWidth / window.innerHeight;
+    const viewSize = 25; // Adjust this to zoom in/out
+    camera = new THREE.OrthographicCamera(
+        -viewSize * aspect, viewSize * aspect,
+        viewSize, -viewSize,
+        0.1, 1000
+    );
+    camera.position.set(0, 0, 50); // Directly above, looking down
+    camera.lookAt(0, 0, 0);
+
+    // Renderer
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('game-container').appendChild(renderer.domElement);
+
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0x404040); // Soft white light
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(0, 10, 10);
+    scene.add(directionalLight);
+
+    // Background - load async, with error handling
+    const loader = new THREE.TextureLoader();
+    loader.load(
+        'img/background.jpg',
+        function(texture) {
+            scene.background = texture;
+            console.log("Background loaded successfully");
+        },
+        undefined,
+        function(error) {
+            console.warn("Background image failed to load (CORS issue on file://), using solid color instead");
+        }
+    );
+
+    // Board Boundary (Visual)
+    const geometry = new THREE.BoxGeometry(boardSize + 1, boardSize + 1, 1);
+    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+    const board = new THREE.Mesh(geometry, material);
+    board.position.z = -0.5;
+    scene.add(board);
+
+    // Event Listeners
+    window.addEventListener('resize', onWindowResize, false);
+    document.addEventListener('keydown', onKeyDown, false);
+    
+    // Touch Event Listeners for swipe gestures
+    document.addEventListener('touchstart', handleTouchStart, false);
+    document.addEventListener('touchend', handleTouchEnd, false);
+    
+    // Mobile Control Buttons
+    const controlBtns = document.querySelectorAll('.control-btn');
+    controlBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const dir = this.getAttribute('data-direction');
+            changeDirection(dir);
+        });
+    });
+
+    // Start Button - optional name, auto-start on page load
+    document.getElementById('player-name-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const nameInput = document.querySelector('.first_name');
+        playerName = nameInput.value.trim() || "Player";
+        startGame();
+    });
+    
+    // Auto-start game after init (skip name form)
+    setTimeout(() => {
+        playerName = "Player";
+        document.querySelector('.form-wrapper').style.display = 'none';
+        startGame();
+    }, 100);
 }
 
+function startGame() {
+    // UI Updates
+    document.querySelector('.form-wrapper').style.display = 'none';
+    document.querySelector('.game-info-wrapper').classList.add('visible');
+    document.querySelector('.pname-name').textContent = playerName;
+    document.querySelector('.pscore-score').textContent = '0';
+
+    // Reset Game State
+    score = 0;
+    direction = "right";
+    nextDirection = "right";
+    gameRunning = true;
+
+    // Clear existing snake/food
+    snake.forEach(part => scene.remove(part.mesh));
+    snake = [];
+    if (food) scene.remove(food.mesh);
+
+    // Create Snake Head
+    createSnakePart(0, 0);
+
+    // Create Food
+    spawnFood();
+
+    // Game Loop
+    if (gameInterval) clearInterval(gameInterval);
+    gameInterval = setInterval(gameLoop, stepTime);
+}
+
+function createSnakePart(x, y) {
+    const geometry = new THREE.BoxGeometry(0.9, 0.9, 0.9);
+    const material = new THREE.MeshPhongMaterial({ color: 0x00ff00, emissive: 0x003300 });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(x, y, 0);
+    scene.add(mesh);
+    snake.push({ x: x, y: y, mesh: mesh });
+}
+
+function spawnFood() {
+    let validPosition = false;
+    let x, y;
+    while (!validPosition) {
+        x = Math.floor(Math.random() * boardSize) - boardSize / 2;
+        y = Math.floor(Math.random() * boardSize) - boardSize / 2;
+        // Adjust to integer coordinates centered
+        x = Math.round(x);
+        y = Math.round(y);
+        
+        validPosition = true;
+        for (let part of snake) {
+            if (part.x === x && part.y === y) {
+                validPosition = false;
+                break;
+            }
+        }
+    }
+
+    if (food) scene.remove(food.mesh);
+    
+    const geometry = new THREE.SphereGeometry(0.5, 32, 32);
+    const material = new THREE.MeshPhongMaterial({ color: 0xff0000, emissive: 0x550000 });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(x, y, 0);
+    scene.add(mesh);
+    food = { x: x, y: y, mesh: mesh };
+}
+
+function gameLoop() {
+    if (!gameRunning) return;
+
+    direction = nextDirection;
+
+    let head = snake[0];
+    let newX = head.x;
+    let newY = head.y;
+
+    if (direction === "right") newX += 1;
+    if (direction === "left") newX -= 1;
+    if (direction === "up") newY += 1;
+    if (direction === "down") newY -= 1;
+
+    // Collision with Walls (Boundary is roughly -10 to 10)
+    const limit = boardSize / 2;
+    if (newX >= limit || newX <= -limit || newY >= limit || newY <= -limit) {
+        gameOver();
+        return;
+    }
+
+    // Collision with Self
+    for (let part of snake) {
+        if (part.x === newX && part.y === newY) {
+            gameOver();
+            return;
+        }
+    }
+
+    // Add new head mesh
+    const geometry = new THREE.BoxGeometry(0.9, 0.9, 0.9);
+    const material = new THREE.MeshPhongMaterial({ color: 0x00ff00, emissive: 0x003300 });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(newX, newY, 0);
+    scene.add(mesh);
+    
+    const newHead = { x: newX, y: newY, mesh: mesh };
+    snake.unshift(newHead); // Add to front
+
+    // Check Food
+    if (Math.abs(newX - food.x) < 0.1 && Math.abs(newY - food.y) < 0.1) {
+        score += 100;
+        document.querySelector('.pscore-score').textContent = score;
+        spawnFood();
+    } else {
+        // Remove tail
+        const tail = snake.pop();
+        scene.remove(tail.mesh);
+        tail.mesh.geometry.dispose();
+        tail.mesh.material.dispose();
+    }
+}
+
+// Start
+window.addEventListener('DOMContentLoaded', () => {
+    if (typeof THREE === 'undefined') {
+        alert("Error: Three.js library not loaded. Please check your internet connection or file paths.");
+        return;
+    }
+    try {
+        init();
+        animate();
+        console.log("Game initialized successfully");
+    } catch (error) {
+        console.error("Initialization error:", error);
+        alert("An error occurred while initializing the game: " + error.message);
+    }
+});

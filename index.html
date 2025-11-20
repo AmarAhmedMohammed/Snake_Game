@@ -1,36 +1,50 @@
 <!DOCTYPE html>
 <html>
 <head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 	<link rel="stylesheet" href="css/styles.css">
-	<title>The Snake Game</title>
+	<title>3D Snake Game</title>
 </head>
 <body>
 	<!-- Player Name -->
-	<h3>Have FUN!!</h3>
-	<div class="form-wrapper">
-		<form id="player-name-form" method="POST">
-			<p>Please enter your Name to start</p>
-			<input type="text" name="first_name" class="first_name" placeholder="* First name">
-			<button id="enterName" type="submit">Start Game</button>
-		</form>
+	<div class="ui-wrapper">
+		<h3>3D SNAKE GAME</h3>
+		<div class="form-wrapper">
+			<form id="player-name-form" method="POST">
+				<p>Enter Name to Start</p>
+				<input type="text" name="first_name" class="first_name" placeholder="Player Name">
+				<button id="enterName" type="submit">Start Game</button>
+			</form>
+		</div>
+
+		<div class="game-info-wrapper">
+			<div class="players-name">
+				<span class="pname-lable">Player:</span>
+				<span class="pname-name"></span>
+			</div>
+			<div class="players-score">
+				<span class="pscore-lable">Score:</span>
+				<span class="pscore-score">0</span>			
+			</div>
+		</div>
 	</div>
 
-	<div class="game-info-wrapper">
-		<div class="players-name">
-			<div class="pname-lable">Player</div>
-			<div class="pname-name"></div>
-		</div>
-		<div class="players-score">
-			<div class="pscore-lable">Score</div>
-			<div class="pscore-score"></div>			
+	<!-- 3D Container -->
+	<div id="game-container"></div>
+
+	<!-- Mobile Controls -->
+	<div class="mobile-controls">
+		<button class="control-btn" data-direction="up">↑</button>
+		<div class="control-row">
+			<button class="control-btn" data-direction="left">←</button>
+			<button class="control-btn" data-direction="down">↓</button>
+			<button class="control-btn" data-direction="right">→</button>
 		</div>
 	</div>
-
-	<!-- Our Canvas -->
-	<canvas class="canvas" width="500" height="500"></canvas>
 
 	<iframe name="ajaxsubstitute" id="ajaxsubstitute" style="display: none;"></iframe>
-	<!-- Hidden For, -->
+	<!-- Hidden Form -->
 	<div class="hidden-score-wrapper">
 		<form id="game-score" method="POST" action="includes/update_score.php" target="ajaxsubstitute">
 			<input type="hidden" name="name" class="player_name">
@@ -39,8 +53,8 @@
 		</form>
 	</div>
 
-
-	<!-- Our Script -->
+	<!-- Scripts -->
+	<script src="js/three.min.js"></script>
 	<script src="js/scripts.js"></script>
 </body>
 </html>
